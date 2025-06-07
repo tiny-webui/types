@@ -1,3 +1,36 @@
+/**
+ * Design principles:
+ * 1. No backward compatibility is required. As the server and client's version are always in sync.
+ * 2. Simplicity is preferred.
+ */
+
+export type SetMetadataParams = {
+    /**
+     * For example, ['global'] means global metadata,
+     * ['user'] means current user's metadata,
+     * ['chat', '123'] means chat metadata for chat with id 123.
+     * ['model, 'abc'] means model metadata for model with id abc.
+     */
+    path: Array<string>;
+    entries: {
+        [key: string]: any;
+    };
+};
+
+export type GetMetadataParams = {
+    path: Array<string>;
+    keys: Array<string>;
+};
+
+export type GetMetadataResult = {
+    [key: string]: any;
+};
+
+export type DeleteMetadataParams = {
+    path: Array<string>;
+    keys: Array<string>;
+};
+
 export type Message = {
     role: 'user' | 'assistant' | 'developer';
     content: Array<{
@@ -24,71 +57,25 @@ export type TreeHistory = {
 };
 
 export type GetChatListParams = {
-    version?: number;
     start: number;
     quantity: number;
+    /** If no key is specified, no metadata will be returned. */
+    metaDataKeys?: Array<string>;
 };
 
 export type GetChatListResult = {
+    /** This list will be in the reverse order of creation */
     list: Array<{
         id: string;
-        title: string;
-        timestamp: number;
+        metadata?: {
+            [key: string]: any;
+        };
     }>;
-    hasMore: boolean;
-};
-
-export type NewChatResult = {
-    id: string;
-    version: number;
-};
-
-export type LockChatParams = {
-    id: string;
-};
-
-export type LockChatResult = {
-    alreadyHeld: boolean;
-};
-
-export type GenerateChatTitleParams = {
-    modelId: string;
-};
-
-export type GenerateChatTitleResult = {
-    title: string;
-    version: number;
-};
-
-export type SetChatTitleParams = {
-    title: string;
-};
-
-export type SetChatTitleResult = {
-    version: number;
-};
-
-export type SetMetadataParams = {
-    entries: {
-        [key: string]: any;
-    };
-};
-
-export type GetMetadataParams = {
-    keys: Array<string>;
-};
-
-export type GetMetadataResult = {
-    entries: {
-        [key: string]: any;
-    };
-};
-
-export type DeleteMetadataParams = {
-    keys: Array<string>;
 };
 
 export type ChatCompletionParams = {
+    id: string;
+    /** If parent is not present, treat as a new root. */
     parent?: string;
     modelId: string;
     userMessage: Message;
@@ -99,150 +86,91 @@ export type GetLastCompletionInfoResult = {
     assistantMessageId: string;
 };
 
-export type ModelInfo = {
-    name: string;
+export type executeGenerationTaskParams = {
+    modelId: string;
+    promptTemplateName: string;
+    promptTemplateParams: Array<string>;
 };
 
-export type GetModelsResult = {
-    [id: string]: ModelInfo;
+export type GetModelListParams = {
+    metadataKeys?: Array<string>;
 };
+
+export type GetModelListResult = Array<{
+    id: string;
+    providerName: string;
+    metadata?: {
+        [key: string]: any;
+    }
+}>;
 
 export type ProviderParams = any;
 
 export type NewModelParams = {
-    info: ModelInfo;
     providerName: string;
-    providerParams: any;
-};
-
-export type GetModelParamsParams = {
-    id: string;
+    providerParams: ProviderParams;
 };
 
 export type ModifyModelParams = {
     id: string;
-    info: ModelInfo;
-    providerParams: any;
+    providerParams: ProviderParams;
 };
 
-export type DeleteModelParams = {
-    id: string;
-};
+/**
+ * There are two types of data:
+ * 1. Data related to server operations, such as chat history, model parameters, etc.
+ *      This kind of data has their own get/set/delete/modify methods.
+ *      Data access is controlled by each method.
+ * 2. Data not related to server operations, such as chat name, model name, etc.
+ *      This kind of data is stored as metadata. They are indexed by a resource path.
+ *      | Resource path | Admin       | Current user | Other users |
+ *      | --------------|-------------|--------------|-------------|
+ *      | global        | Read/Write  | Read         | Read        |
+ *      | model, <id>   | Read/Write  | Read         | Read        |
+ *      | user          | None        | Read/Write   | None        |
+ *      | chat, <id>    | None        | Read/Write   | None        |
+ */
+
+/**
+ * The server manages each connection's data version.
+ * When getting a resource, if the data is up-do-data, the call will fail with a NOT_MODIFIED error.
+ * When modifying a resource, if the original data is outdated, the call will fail with a CONFLICT error.
+ * The caller should then get the latest data and retry the operation.
+ * When modifying a resource that is busy (e.g., a chat with active completion), the call will fail with a LOCKED error.
+ * The caller should inform the user to take actions. Auto retry is not recommended.
+ */
 
 export interface IServer {
+    /** Metadata, chat title, model name, etc. */
+    setMetadataAsync(params: SetMetadataParams): Promise<void>;
+    getMetadataAsync(params: GetMetadataParams): Promise<GetMetadataResult>;
+    deleteMetadataAsync(params: DeleteMetadataParams): Promise<void>;
+
     /** Chat list */
-    /**
-     * Get the latest chat list version.
-     * The version number is used for syncing the chat list among multiple sessions of the same user.
-     * Every write operation to the chat list will change this version number.
-     * And should have the new version number returned.
-     * The server will call all the user's sessions postChatVersion when the version number changes.
-     * If a client find the version number different from its local value, it needs to update the chat list.
-     */
-    getChatListVersion(): Promise<number>;
-    /**
-     * If the given chat list version does not match the current one,
-     * this call will fail with OUTDATED exception
-     */
-    getChatList(params: GetChatListParams): Promise<GetChatListResult>;
+    getChatListAsync(params: GetChatListParams): Promise<GetChatListResult>;
 
     /** Chat */
-    /**
-     * @note This call updates the chat list version.
-     */
-    newChat(): Promise<NewChatResult>;
-    /**
-     * This call locks the chat lossy for this session.
-     * All chat related calls are only valid when the lock is held by this session.
-     * The returned value shows wether the lock was already held by this session.
-     * If the lock was not held before, the client's data should be considered outdated.
-     * 
-     * A newly held lock will deny any other previous session from accessing this chat. 
-     * The lock cannot be held if a stream request is in progress. And will fail with a BUSY exception.
-     * 
-     * If the lock is not held, all chat API calls will fail with a LOCK_NOT_HELD exception.
-     * 
-     * There is no unlock call. As the lock will be taken if the chat is not busy and requested by another session.
-     * This avoids a idle session to hold the lock forever.
-     * 
-     * @warning Be sensible with the lock. If the lock is taken away. DO NOT take it back right away.
-     * @warning DO NOT call this unless you have a good reason. DO NOT call this before all other calls.
-     */
-    lockChat(params: LockChatParams): Promise<LockChatResult>;
-    DeleteChat(): Promise<void>;
-    getChat(): Promise<TreeHistory>;
+    newChatAsync(): Promise<string>;
+    getChatAsync(id: string): Promise<TreeHistory>;
+    deleteChatAsync(id: string): Promise<void>;
 
-    /** Chat title */
-    generateChatTitle(params: GenerateChatTitleParams): Promise<GenerateChatTitleResult>;
-    setChatTitle(params: SetChatTitleParams): Promise<SetChatTitleResult>;
-  
-    /** Chat metadata */
-    setChatMetadata(params: SetMetadataParams): Promise<void>;
-    getChatMetadata(params: GetMetadataParams): Promise<GetMetadataResult>;
-    deleteChatMetadata(params: DeleteMetadataParams): Promise<void>;
-
-    /** Chat */
-    chatCompletion(params: ChatCompletionParams): AsyncGenerator<string, void, void>;
+    /** Model inference */
+    chatCompletionAsync(params: ChatCompletionParams): AsyncGenerator<string, void, void>;
     /**
      * You need to get the id of the last user message and last assistant message
      * once the chat completion is done.
      */
-    getLastCompletionInfo(): Promise<GetLastCompletionInfoResult>;
+    getLastCompletionInfoAsync(id: string): Promise<GetLastCompletionInfoResult>;
+    /**
+     * Execute a one-off generation task. This task is not associated with any chat.
+     * This can be used for generating chat titles, summaries, etc.
+     */
+    executeGenerationTaskAsync(params: executeGenerationTaskParams): Promise<string>;
 
-    /**
-     * Admin/Global settings
-     * No locks and versions for settings to avoid unnecessary complication.
-     * It is not a common operation for two admins to change settings at the same time.
-     * When settings change, the server will call all user's sessions postSettingsChanged method.
-     */
-    getModels(): Promise<GetModelsResult>;
-    /**
-     * @note Admin only.
-     */
-    newModel(params: NewModelParams): Promise<ModelInfo>;
-    /**
-     * @note Admin only. The params WILL contain credentials.
-     */
-    getModelParams(params: GetModelParamsParams): Promise<ProviderParams>;
-    /**
-     * @note Admin only.
-     */
-    modifyModel(params: ModifyModelParams): Promise<void>;
-    /**
-     * @note Admin only.
-     */
-    deleteModel(params: DeleteModelParams): Promise<void>;
-
-    /**
-     * DO NOT store sensitive data in the global metadata.
-     * The global metadata is read only for all non-admin users.
-     */
-    // getGlobalMetadata(params: GetMetadataParams): Promise<GetMetadataResult>;
-    /**
-     * @note Admin only.
-     */
-    // setGlobalMetadata(params: SetMetadataParams): Promise<void>;
-    /**
-     * @note Admin only.
-     */
-    // deleteGlobalMetadata(params: DeleteMetadataParams): Promise<void>;
-
-    /**
-     * User settings
-     */
-    // setUserMetadata(params: SetMetadataParams): Promise<void>;
-    // getUserMetadata(params: GetMetadataParams): Promise<GetMetadataResult>;
-    // deleteUserMetadata(params: DeleteMetadataParams): Promise<void>;
-
-    /** @todo account settings, user management */
+    /** Model */
+    getModelListAsync(params: GetModelListParams): Promise<GetModelListResult>;
+    newModelAsync(params: NewModelParams): Promise<string>;
+    getModelAsync(id: string): Promise<ProviderParams>;
+    deleteModelAsync(id: string): Promise<void>;
+    modifyModelAsync(params: ModifyModelParams): Promise<void>;
 };
-
-type PostChatListVersionParams = {
-    version: number;
-};
-
-export interface IClient {
-    postChatListVersion(params: PostChatListVersionParams) : void;
-    postSettingsChanged(): void;
-};
-

@@ -30,9 +30,8 @@ export type StreamEndResponse = {
 };
 
 export enum ErrorCode {
-    OUTDATED,
-    BUSY,
-    LOCK_NOT_HELD,
-    STREAM_INTERRUPTED,
-    NOT_FOUND,
+    NOT_MODIFIED = 304,
+    NOT_FOUND = 404,
+    CONFLICT = 409,
+    LOCKED = 423,
 };

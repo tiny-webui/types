@@ -173,4 +173,6 @@ export interface IServer {
     getModelAsync(id: string): Promise<ProviderParams>;
     deleteModelAsync(id: string): Promise<void>;
     modifyModelAsync(params: ModifyModelParams): Promise<void>;
+
+    /** @todo User management */
 };

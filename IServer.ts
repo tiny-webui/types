@@ -9,7 +9,7 @@ export type SetMetadataParams = {
      * For example, ['global'] means global metadata,
      * ['user'] means current user's metadata,
      * ['chat', '123'] means chat metadata for chat with id 123.
-     * ['model, 'abc'] means model metadata for model with id abc.
+     * ['model', 'abc'] means model metadata for model with id abc.
      */
     path: Array<string>;
     entries: {

@@ -27,6 +27,7 @@ export type ErrorResponse = {
 export type StreamEndResponse = {
     id: number;
     end: true;
+    result: any;
 };
 
 export enum ErrorCode {

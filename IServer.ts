@@ -81,7 +81,7 @@ export type ChatCompletionParams = {
     userMessage: Message;
 };
 
-export type GetLastCompletionInfoResult = {
+export type ChatCompletionInfo = {
     userMessageId: string;
     assistantMessageId: string;
 };
@@ -155,12 +155,7 @@ export interface IServer {
     deleteChatAsync(id: string): Promise<void>;
 
     /** Model inference */
-    chatCompletionAsync(params: ChatCompletionParams): AsyncGenerator<string, void, void>;
-    /**
-     * You need to get the id of the last user message and last assistant message
-     * once the chat completion is done.
-     */
-    getLastCompletionInfoAsync(id: string): Promise<GetLastCompletionInfoResult>;
+    chatCompletionAsync(params: ChatCompletionParams): AsyncGenerator<string, ChatCompletionInfo, void>;
     /**
      * Execute a one-off generation task. This task is not associated with any chat.
      * This can be used for generating chat titles, summaries, etc.

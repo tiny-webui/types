@@ -7,7 +7,8 @@
 export type SetMetadataParams = {
     /**
      * For example, ['global'] means global metadata,
-     * ['user'] means current user's metadata,
+     * ['user'] means current user's private metadata,
+     * ['user', 'public' ] means current user's public metadata,
      * ['chat', '123'] means chat metadata for chat with id 123.
      * ['model', 'abc'] means model metadata for model with id abc.
      */
@@ -104,16 +105,54 @@ export type GetModelListResult = Array<{
     }
 }>;
 
-export type ProviderParams = any;
-
-export type NewModelParams = {
+export type ModelSettings = {
     providerName: string;
-    providerParams: ProviderParams;
+    providerParams: any;
 };
 
-export type ModifyModelParams = {
+export type ModifyModelSettingsParams = {
     id: string;
-    providerParams: ProviderParams;
+    settings: ModelSettings;
+};
+
+export type UserAdminSettings = {
+    role: 'admin' | 'user';
+};
+
+/** @todo: Update this type according to the cipher. */
+export type UserCredential = any;
+
+export type GetUserListParams = {
+    metadataKeys?: Array<string>;
+};
+
+export type GetUserListResult = Array<{
+    id: string;
+    userName: string;
+    adminSettings: UserAdminSettings;
+    publicMetadata: {
+        [key: string]: any;
+    }
+}>;
+
+export type GetUserAnyParams = {
+    /** 
+     * For admin, the user id.
+     * The current user has no knowledge of their id. It's provided by the authentication system.
+     */
+    id?: string;
+};
+
+export type NewUserParams = {
+    /** User name cannot be changed. As this is how the admin identifies a user. */
+    userName: string;
+    adminSettings: UserAdminSettings;
+    credential: UserCredential;
+};
+
+export type SetUserAdminSettingsParams = {
+    id: string;
+    adminSettings: UserAdminSettings;
 };
 
 /**
@@ -146,28 +185,57 @@ export interface IServer {
     getMetadataAsync(params: GetMetadataParams): Promise<GetMetadataResult>;
     deleteMetadataAsync(params: DeleteMetadataParams): Promise<void>;
 
-    /** Chat list */
+    /** Chat, current user. */
     getChatListAsync(params: GetChatListParams): Promise<GetChatListResult>;
-
-    /** Chat */
     newChatAsync(): Promise<string>;
     getChatAsync(id: string): Promise<TreeHistory>;
     deleteChatAsync(id: string): Promise<void>;
+    /** There is no set chat call. As modifying the chat content is a side effect of chat completion. */
 
     /** Model inference */
+    /** Current user */
     chatCompletionAsync(params: ChatCompletionParams): AsyncGenerator<string, ChatCompletionInfo, void>;
     /**
      * Execute a one-off generation task. This task is not associated with any chat.
      * This can be used for generating chat titles, summaries, etc.
+     * Any user.
      */
     executeGenerationTaskAsync(params: executeGenerationTaskParams): Promise<string>;
 
     /** Model */
+    /** Any user */
     getModelListAsync(params: GetModelListParams): Promise<GetModelListResult>;
-    newModelAsync(params: NewModelParams): Promise<string>;
-    getModelAsync(id: string): Promise<ProviderParams>;
+    /** Admin */
+    newModelAsync(params: ModelSettings): Promise<string>;
+    /** Admin */
+    getModelAsync(id: string): Promise<ModelSettings>;
+    /** Admin */
     deleteModelAsync(id: string): Promise<void>;
-    modifyModelAsync(params: ModifyModelParams): Promise<void>;
+    /** Admin */
+    modifyModelAsync(params: ModifyModelSettingsParams): Promise<void>;
 
-    /** @todo User management */
+    /** User management */
+    /** Admin */
+    getUserListAsync(): Promise<GetUserListResult>;
+    /** Admin */
+    newUserAsync(params: NewUserParams): Promise<string>;
+    /** Admin, current user */
+    deleteUserAsync(params: GetUserAnyParams): Promise<void>;
+    /**
+     * Admin settings: user role, permissions, etc.
+     * Read/write for admin. Read only for current user.
+     */
+    /** Admin, current user */
+    getUserAdminSettingsAsync(params: GetUserAnyParams): Promise<UserAdminSettings>;
+    /** Admin */
+    setUserAdminSettingsAsync(params: SetUserAdminSettingsParams): Promise<void>;
+    /**
+     * Credential, stuffs used for authentication.
+     * Write only for current user.
+     * No one should read the credential.
+     * The Admin sets the initial credential for a new user.
+     * The user should later change it to their own credential before generating any data.
+     */
+    /** Current user */
+    setUserCredentialAsync(params: UserCredential): Promise<void>;
 };

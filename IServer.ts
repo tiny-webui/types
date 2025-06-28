@@ -127,7 +127,7 @@ export type GetUserListResult = Array<{
     id: string;
     userName: string;
     adminSettings: UserAdminSettings;
-    publicMetadata: {
+    publicMetadata?: {
         [key: string]: any;
     }
 }>;
@@ -213,17 +213,17 @@ export interface IServer {
 
     /** User management */
     /** Admin */
-    getUserListAsync(): Promise<GetUserListResult>;
+    getUserListAsync(params: GetUserListParams): Promise<GetUserListResult>;
     /** Admin */
     newUserAsync(params: NewUserParams): Promise<string>;
     /** Admin, current user */
-    deleteUserAsync(params: GetUserAnyParams): Promise<void>;
+    deleteUserAsync(id: string): Promise<void>;
     /**
      * Admin settings: user role, permissions, etc.
      * Read/write for admin. Read only for current user.
      */
     /** Admin, current user */
-    getUserAdminSettingsAsync(params: GetUserAnyParams): Promise<UserAdminSettings>;
+    getUserAdminSettingsAsync(id: string): Promise<UserAdminSettings>;
     /** Admin */
     setUserAdminSettingsAsync(params: SetUserAdminSettingsParams): Promise<void>;
     /**

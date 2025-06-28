@@ -54,7 +54,6 @@ export type TreeHistory = {
     nodes: {
         [id: string]: MessageNode;
     };
-    head: string;
 };
 
 export type GetChatListParams = {
@@ -89,8 +88,7 @@ export type ChatCompletionInfo = {
 
 export type executeGenerationTaskParams = {
     modelId: string;
-    promptTemplateName: string;
-    promptTemplateParams: Array<string>;
+    message: Message;
 };
 
 export type GetModelListParams = {
@@ -99,7 +97,6 @@ export type GetModelListParams = {
 
 export type GetModelListResult = Array<{
     id: string;
-    providerName: string;
     metadata?: {
         [key: string]: any;
     }

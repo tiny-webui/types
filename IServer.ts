@@ -159,12 +159,13 @@ export type SetUserAdminSettingsParams = {
  *      Data access is controlled by each method.
  * 2. Data not related to server operations, such as chat name, model name, etc.
  *      This kind of data is stored as metadata. They are indexed by a resource path.
- *      | Resource path | Admin       | Current user | Other users |
- *      | --------------|-------------|--------------|-------------|
- *      | global        | Read/Write  | Read         | Read        |
- *      | model, <id>   | Read/Write  | Read         | Read        |
- *      | user          | None        | Read/Write   | None        |
- *      | chat, <id>    | None        | Read/Write   | None        |
+ *      | Resource path      | Admin       | Current user | Other users |
+ *      | -------------------|-------------|--------------|-------------|
+ *      | global             | Read/Write  | Read         | Read        |
+ *      | model, <id>        | Read/Write  | Read         | Read        |
+ *      | user               | None        | Read/Write   | None        |
+ *      | userPublic, [<id>] | Read        | Read/Write   | None        |
+ *      | chat, <id>         | None        | Read/Write   | None        |
  */
 
 /**

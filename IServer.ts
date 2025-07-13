@@ -116,8 +116,14 @@ export type UserAdminSettings = {
     role: 'admin' | 'user';
 };
 
-/** @todo: Update this type according to the cipher. */
-export type UserCredential = any;
+export type UserCredential = {
+    /** Hex string */
+    w0: string;
+    /** Hex string */
+    L: string;
+    /** Hex string */
+    salt: string;
+};
 
 export type GetUserListParams = {
     metadataKeys?: Array<string>;
@@ -150,6 +156,17 @@ export type NewUserParams = {
 export type SetUserAdminSettingsParams = {
     id: string;
     adminSettings: UserAdminSettings;
+};
+
+/** These two messages are not exposed to the application layer. */
+export type ProtocolNegotiationRequest = {
+    turnOffEncryption: boolean;
+};
+
+export type ProtocolNegotiationResponse = {
+    sessionResumptionKeyIndex: string;
+    sessionResumptionKey: string;
+    wasUnderAttack: boolean;
 };
 
 /**

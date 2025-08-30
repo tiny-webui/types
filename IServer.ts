@@ -14,7 +14,7 @@ export type SetMetadataParams = {
      */
     path: Array<string>;
     entries: {
-        [key: string]: any;
+        [key: string]: unknown;
     };
 };
 
@@ -24,7 +24,7 @@ export type GetMetadataParams = {
 };
 
 export type GetMetadataResult = {
-    [key: string]: any;
+    [key: string]: unknown;
 };
 
 export type DeleteMetadataParams = {
@@ -63,15 +63,12 @@ export type GetChatListParams = {
     metaDataKeys?: Array<string>;
 };
 
-export type GetChatListResult = {
-    /** This list will be in the reverse order of creation */
-    list: Array<{
-        id: string;
-        metadata?: {
-            [key: string]: any;
-        };
-    }>;
-};
+export type GetChatListResult = Array<{
+    id: string;
+    metadata?: {
+        [key: string]: unknown;
+    };
+}>;
 
 export type ChatCompletionParams = {
     id: string;
@@ -98,13 +95,13 @@ export type GetModelListParams = {
 export type GetModelListResult = Array<{
     id: string;
     metadata?: {
-        [key: string]: any;
+        [key: string]: unknown;
     }
 }>;
 
 export type ModelSettings = {
     providerName: string;
-    providerParams: any;
+    providerParams: unknown;
 };
 
 export type ModifyModelSettingsParams = {
@@ -134,7 +131,7 @@ export type GetUserListResult = Array<{
     userName: string;
     adminSettings: UserAdminSettings;
     publicMetadata?: {
-        [key: string]: any;
+        [key: string]: unknown;
     }
 }>;
 

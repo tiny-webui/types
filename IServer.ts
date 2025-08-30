@@ -132,16 +132,9 @@ export type GetUserListResult = Array<{
     adminSettings: UserAdminSettings;
     publicMetadata?: {
         [key: string]: unknown;
-    }
+    };
+    isSelf?: boolean;
 }>;
-
-export type GetUserAnyParams = {
-    /** 
-     * For admin, the user id.
-     * The current user has no knowledge of their id. It's provided by the authentication system.
-     */
-    id?: string;
-};
 
 export type NewUserParams = {
     /** User name cannot be changed. As this is how the admin identifies a user. */

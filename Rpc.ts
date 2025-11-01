@@ -8,12 +8,12 @@
 export type Request = {
     id: number;
     method: string;
-    params: any;
+    params: unknown;
 };
 
 export type Response = {
     id: number;
-    result: any;
+    result: unknown;
 };
 
 export type ErrorResponse = {
@@ -27,7 +27,7 @@ export type ErrorResponse = {
 export type StreamEndResponse = {
     id: number;
     end: true;
-    result: any;
+    result: unknown;
 };
 
 export enum ErrorCode {

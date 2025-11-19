@@ -123,7 +123,8 @@ export type UserCredential = {
 };
 
 export type GetUserListParams = {
-    metadataKeys?: Array<string>;
+    publicMetadataKeys?: Array<string>;
+    adminMetadataKeys?: Array<string>;
 };
 
 export type GetUserListResult = Array<{
@@ -131,6 +132,9 @@ export type GetUserListResult = Array<{
     userName: string;
     adminSettings: UserAdminSettings;
     publicMetadata?: {
+        [key: string]: unknown;
+    };
+    adminMetadata?: {
         [key: string]: unknown;
     };
     isSelf?: boolean;
@@ -172,6 +176,7 @@ export type ProtocolNegotiationResponse = {
  *      | model, <id>        | Read/Write  | Read         | Read        |
  *      | user               | None        | Read/Write   | None        |
  *      | userPublic, [<id>] | Read        | Read/Write   | None        |
+ *      | userAdmin, [<id>]  | Read/Write  | None         | None        |
  *      | chat, <id>         | None        | Read/Write   | None        |
  */
 

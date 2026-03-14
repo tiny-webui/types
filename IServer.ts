@@ -164,30 +164,41 @@ export type ProtocolNegotiationResponse = {
 };
 
 export type PutFileParams = {
-    fileName: string;
     contentBase64: string;
+    fileMetadata: unknown;
 };
 
 export type PutFileResult = {
-    id: string;
+    fileId: string;
+    /** Multiple file can point to the same content. */
+    contentId: string;
 };
 
-export type GetFileParams = {
-    id: string;
+export type GetFileMetaParams = {
+    fileId: string;
 };
 
-export type GetFileResult = {
-    fileName: string;
+export type GetFileMetaResult = {
+    contentId: string;
+    fileMetadata: unknown;
+};
+
+export type GetFileContentParams = {
+    contentId: string;
+};
+
+export type GetFileContentResult = {
     contentBase64: string;
 };
 
 export type DeleteFileParams = {
-    id: string;
+    fileId: string;
 };
 
 export type ListFileResult = Array<{
-    id: string;
-    fileName: string;
+    fileId: string;
+    contentId: string;
+    fileMetadata: unknown;
 }>;
 
 /**
@@ -279,7 +290,8 @@ export interface IServer {
     /** File (context) management */
     /** Current user */
     putFileAsync(params: PutFileParams): Promise<PutFileResult>;
-    getFileAsync(params: GetFileParams): Promise<GetFileResult>;
+    getFileMetaAsync(params: GetFileMetaParams): Promise<GetFileMetaResult>;
+    getFileContentAsync(params: GetFileContentParams): Promise<GetFileContentResult>;
     deleteFileAsync(params: DeleteFileParams): Promise<void>;
     listFileAsync(): Promise<ListFileResult>;
 };

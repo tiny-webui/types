@@ -289,9 +289,14 @@ export interface IServer {
 
     /** File (context) management */
     /** Current user */
-    putFileAsync(params: PutFileParams): Promise<PutFileResult>;
+    /** The content type differs from the on wire PutFileParams */
+    putFileAsync(params: {
+        content: Uint8Array;
+        metadata: unknown;
+    }): Promise<PutFileResult>;
     getFileMetaAsync(params: GetFileMetaParams): Promise<GetFileMetaResult>;
-    getFileContentAsync(params: GetFileContentParams): Promise<GetFileContentResult>;
+    /** The content type differs from the on wire GetFileContentResult */
+    getFileContentAsync(params: GetFileContentParams): Promise<{content: Uint8Array}>;
     deleteFileAsync(params: DeleteFileParams): Promise<void>;
     listFileAsync(): Promise<ListFileResult>;
 };

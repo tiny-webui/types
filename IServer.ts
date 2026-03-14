@@ -163,6 +163,33 @@ export type ProtocolNegotiationResponse = {
     wasUnderAttack: boolean;
 };
 
+export type PutFileParams = {
+    fileName: string;
+    contentBase64: string;
+};
+
+export type PutFileResult = {
+    id: string;
+};
+
+export type GetFileParams = {
+    id: string;
+};
+
+export type GetFileResult = {
+    fileName: string;
+    contentBase64: string;
+};
+
+export type DeleteFileParams = {
+    id: string;
+};
+
+export type ListFileResult = Array<{
+    id: string;
+    fileName: string;
+}>;
+
 /**
  * There are two types of data:
  * 1. Data related to server operations, such as chat history, model parameters, etc.
@@ -248,4 +275,11 @@ export interface IServer {
      */
     /** Current user */
     setUserCredentialAsync(params: UserCredential): Promise<void>;
+
+    /** File (context) management */
+    /** Current user */
+    putFileAsync(params: PutFileParams): Promise<PutFileResult>;
+    getFileAsync(params: GetFileParams): Promise<GetFileResult>;
+    deleteFileAsync(params: DeleteFileParams): Promise<void>;
+    listFileAsync(): Promise<ListFileResult>;
 };

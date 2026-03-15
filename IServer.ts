@@ -32,13 +32,34 @@ export type DeleteMetadataParams = {
     keys: Array<string>;
 };
 
-export type Message = {
+export type MessageContent = {
+    type: 'text' | 'image_url' | 'refusal';
+    data: string;
+}
+
+export type ChatMessage = {
     role: 'user' | 'assistant' | 'developer';
-    content: Array<{
-        type: 'text' | 'image_url' | 'refusal';
-        data: string;
-    }>;
+    content: Array<MessageContent>;
 };
+
+export type FunctionCallMessage = {
+    type: 'function_call';
+    call_id: string;
+    name: string;
+    arguments: string;
+    /** Provider specific trash required for the message but not the logic. */
+    extra?: unknown;
+};
+
+export type FunctionCallOutputMessage = {
+    type: 'function_call_output';
+    call_id: string;
+    output: Array<MessageContent>;
+    /** Provider specific trash. */
+    extra?: unknown;
+};
+
+export type Message = ChatMessage | FunctionCallMessage | FunctionCallOutputMessage;
 
 export type MessageNode = {
     id: string;
@@ -70,22 +91,42 @@ export type GetChatListResult = Array<{
     };
 }>;
 
+export type Tool = {
+    name: string;
+    description: string;
+    /** JSON schema for the parameter */
+    parameters: unknown;
+};
+
 export type ChatCompletionParams = {
     id: string;
     /** If parent is not present, treat as a new root. */
     parent?: string;
     modelId: string;
-    userMessage: Message;
+    messages: Array<Message>;
+    tools?: Array<Tool>;
+};
+
+export type ChatCompletionSegment = string | {
+    event: 'function_call_start'
+} | {
+    event: 'function_call_end';
+    data: FunctionCallMessage;
 };
 
 export type ChatCompletionInfo = {
-    userMessageId: string;
-    assistantMessageId: string;
+    /** Message ids for the new requests and responses. */
+    messageIds: Array<string>;
 };
 
 export type executeGenerationTaskParams = {
     modelId: string;
-    message: Message;
+    messages: Array<Message>;
+    tools?: Array<Tool>;
+};
+
+export type executeGenerationTaskResult = {
+    messages: Array<Message>;
 };
 
 export type GetModelListParams = {
@@ -242,13 +283,13 @@ export interface IServer {
 
     /** Model inference */
     /** Current user */
-    chatCompletionAsync(params: ChatCompletionParams): AsyncGenerator<string, ChatCompletionInfo, void>;
+    chatCompletionAsync(params: ChatCompletionParams): AsyncGenerator<ChatCompletionSegment, ChatCompletionInfo, void>;
     /**
      * Execute a one-off generation task. This task is not associated with any chat.
      * This can be used for generating chat titles, summaries, etc.
      * Any user.
      */
-    executeGenerationTaskAsync(params: executeGenerationTaskParams): Promise<string>;
+    executeGenerationTaskAsync(params: executeGenerationTaskParams): Promise<executeGenerationTaskResult>;
 
     /** Model */
     /** Any user */
@@ -289,14 +330,9 @@ export interface IServer {
 
     /** File (context) management */
     /** Current user */
-    /** The content type differs from the on wire PutFileParams */
-    putFileAsync(params: {
-        content: Uint8Array;
-        metadata: unknown;
-    }): Promise<PutFileResult>;
+    putFileAsync(params: PutFileParams): Promise<PutFileResult>;
     getFileMetaAsync(params: GetFileMetaParams): Promise<GetFileMetaResult>;
-    /** The content type differs from the on wire GetFileContentResult */
-    getFileContentAsync(params: GetFileContentParams): Promise<{content: Uint8Array}>;
+    getFileContentAsync(params: GetFileContentParams): Promise<GetFileContentResult>;
     deleteFileAsync(params: DeleteFileParams): Promise<void>;
     listFileAsync(): Promise<ListFileResult>;
 };

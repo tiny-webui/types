@@ -91,6 +91,17 @@ export type GetChatListResult = Array<{
     };
 }>;
 
+export type GetPinnedChatListParams = {
+    metaDataKeys?: Array<string>;
+};
+
+export type GetPinnedChatListResult = GetChatListResult;
+
+export type SetChatPinnedParams = {
+    id: string;
+    pinned: boolean;
+};
+
 export type Tool = {
     name: string;
     description: string;
@@ -276,6 +287,8 @@ export interface IServer {
 
     /** Chat, current user. */
     getChatListAsync(params: GetChatListParams): Promise<GetChatListResult>;
+    getPinnedChatListAsync(params: GetPinnedChatListParams): Promise<GetPinnedChatListResult>;
+    setChatPinnedAsync(params: SetChatPinnedParams): Promise<void>;
     newChatAsync(): Promise<string>;
     getChatAsync(id: string): Promise<TreeHistory>;
     deleteChatAsync(id: string): Promise<void>;
